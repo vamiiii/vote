@@ -1137,7 +1137,7 @@ async function renderAnalytics() {
 
     // 3. НОВОЕ: Отрисовка реального графика Закона Бенфорда
     try {
-        const benfordData = await api.get('/analytics/benford');
+        const benfordData = await api.get('/reports/benford');
         const ctxB = document.getElementById('benford-chart');
         if (ctxB) {
             if (window.benfordChart) window.benfordChart.destroy();
@@ -1187,7 +1187,7 @@ async function generateReport(type) {
         
         try {
             // Запрашиваем реальные данные с сервера
-            const res = await api.get('/analytics/hourly');
+            const res = await api.get('/reports/hourly');
             const hourly = res.hourly;
             
             let labels = [];
@@ -1285,7 +1285,7 @@ async function generateFullReport() {
     
     let methodsHtml = '<li>Данные о методах ввода недоступны</li>';
     try {
-        const mRes = await api.get('/analytics/methods');
+        const mRes = await api.get('/reports/methods');
         methodsHtml = '';
         const methodIcons = { 'Скан': '🖨️ Авто-Скан (Нейросеть)', 'Ручной': '⌨️ Ручной ввод протокола', 'Модерация': '🛡️ Ручная модерация инцидента' };
         for (let key in mRes.methods) {
