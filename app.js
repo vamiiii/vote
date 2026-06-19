@@ -692,8 +692,7 @@ class BallotScanner {
 
     async scanBallot() {
         try {
-            const response = await fetch('http://127.0.0.1:8000/scan');
-            const data = await response.json();
+            const data = await api.get('/scan');
 
             // Если пришла системная ошибка (в т.ч. из-за того что участок закрыт)
             if (data.status === 'sys_error') {
