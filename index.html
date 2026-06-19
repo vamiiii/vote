@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>АРМ "Выборы" | Система голосования с модулем сканирования</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo-container">
+            <div class="logo-icon"><i class="fas fa-vote-yea"></i></div>
+            <div class="logo-text">VoteSystem <span style="font-size:10px; color:var(--secondary)">PRO</span></div>
+        </div>
+        <ul class="nav-links">
+            <li><a class="nav-link active" data-tab="dashboard"><i class="fas fa-chart-pie"></i> Дашборд</a></li>
+            <li><a class="nav-link" data-tab="scanner"><i class="fas fa-print"></i> Сканер бюллетеней</a></li>
+            <li><a class="nav-link" data-tab="calendar"><i class="fas fa-calendar-alt"></i> Календарь выборов</a></li>
+            <li><a class="nav-link" data-tab="votes"><i class="fas fa-edit"></i> Ввод протоколов</a></li>
+            <li><a class="nav-link" data-tab="candidates"><i class="fas fa-user-tie"></i> Кандидаты</a></li>
+            <li><a class="nav-link" data-tab="districts"><i class="fas fa-map-marker-alt"></i> Участки</a></li>
+            <li><a class="nav-link" data-tab="analytics"><i class="fas fa-chart-line"></i> Аналитика</a></li>
+            <li><a class="nav-link" data-tab="reports"><i class="fas fa-file-download"></i> Отчеты</a></li>
+            <li><a class="nav-link" data-tab="settings"><i class="fas fa-sliders-h"></i> Настройки</a></li>
+        </ul>
+        <div style="margin-top: auto; padding: 15px; background: var(--light); border-radius: 12px; display: flex; align-items: center; gap: 10px;">
+            <div style="width: 32px; height: 32px; background: var(--text-main); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">ПУ</div>
+            <div style="font-size: 12px;">
+                <div style="font-weight: 700;">Иванов И.И.</div>
+                <div style="color: var(--secondary);">● Председатель УИК</div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div>
+                <h1 id="page-title" style="font-size: 24px; font-weight: 700;">Обзор системы</h1>
+                <p style="color: var(--text-light); font-size: 14px;" id="current-date">Загрузка даты...</p>
+            </div>
+            <div class="actions">
+                <button class="theme-toggle" id="theme-btn" title="Сменить тему"><i class="fas fa-moon"></i></button>
+                <button class="btn btn-primary" onclick="refreshData()"><i class="fas fa-sync-alt"></i> Обновить</button>
+                <button class="btn btn-outline" onclick="openQuickAddModal()"><i class="fas fa-plus"></i> Быстрое добавление</button>
+            </div>
+        </div>
+
+        <div id="dashboard" class="tab-content active">
+            <div class="cards-grid">
+                <div class="stat-card" style="--accent: var(--primary)">
+                    <div class="stat-label">Всего голосов</div>
+                    <div class="stat-value" id="dash-total-votes">0</div>
+                </div>
+                <div class="stat-card" style="--accent: var(--secondary)">
+                    <div class="stat-label">Явка избирателей</div>
+                    <div class="stat-value" id="dash-turnout">0%</div>
+                    <div class="turnout-indicator">
+                        <div id="turnout-fill" class="turnout-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <div class="stat-card" style="--accent: var(--warning)">
+                    <div class="stat-label">Обработано УИК</div>
+                    <div class="stat-value" id="dash-districts-done">0/0</div>
+                    <div class="progress-bar" style="height: 4px; background: #eee; margin-top: 10px; border-radius: 2px;">
+                        <div id="dash-progress" style="width: 0%; height: 100%; background: var(--warning); border-radius: 2px;"></div>
+                    </div>
+                </div>
+                <div class="stat-card" style="--accent: var(--danger)">
+                    <div class="stat-label">Активных ошибок</div>
+                    <div class="stat-value" id="dash-active-errors">0</div>
+                    <div style="font-size: 12px; color: var(--text-light);" id="scanner-status-text">Сканер остановлен</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                <div class="panel">
+                    <div class="panel-header"><h3>Лидеры голосования</h3></div>
+                    <div class="chart-container"><canvas id="mainChart"></canvas></div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3>Карта обработки УИК</h3></div>
+                    <p style="font-size: 13px; color: var(--text-light);">Визуальный статус получения протоколов</p>
+                    <div id="district-map" class="district-map-grid"></div>
+                    <div style="margin-top: 15px; display: flex; gap: 15px; font-size: 12px;">
+                        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px; height:10px; background:var(--secondary); border-radius:50%"></div> Обработан</div>
+                        <div style="display:flex; align-items:center; gap:5px;"><div style="width:10px; height:10px; background:var(--border); border-radius:50%"></div> Ожидание</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scanner" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Система сканирования бюллетеней</h3>
+                    <div class="actions">
+                        <button class="btn btn-success btn-sm" id="start-scanner-btn"><i class="fas fa-play"></i> Запустить сканер</button>
+                        <button class="btn btn-danger btn-sm" id="stop-scanner-btn" disabled><i class="fas fa-stop"></i> Остановить</button>
+                        <button class="btn btn-outline btn-sm" onclick="openManualEntryModal()"><i class="fas fa-keyboard"></i> Ручной ввод</button>
+                    </div>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="panel">
+                        <h4 style="margin-bottom: 15px;">Предпросмотр сканера</h4>
+                        <div id="scanner-preview" class="scanner-preview" style="position: relative;">
+                            <!-- Добавлен тег для отображения результата работы YOLO -->
+                            <img id="scanned-image-result" src="" style="display: none; width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; z-index: 5;" />
+                            
+                            <div style="text-align: center; color: var(--text-light); position: relative; z-index: 1;">
+                                <div class="scan-line"></div>
+                                <div id="scanner-status-indicator" class="scanner-status-indicator scanner-status-idle"></div>
+                                <i class="fas fa-print fa-3x" style="margin-bottom: 10px;"></i>
+                                <p id="scanner-preview-text">Сканер готов к работе</p>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <h4>Статус сканера</h4>
+                            <div id="scanner-status" class="badge badge-warning" style="display: inline-block; margin-left: 10px;">
+                                <i class="fas fa-circle"></i> Остановлен
+                            </div>
+                            
+                            <div style="margin-top: 15px; display: flex; gap: 15px;">
+                                <div><div class="stat-label">Всего обработано</div><div class="stat-value" id="total-scanned">0</div></div>
+                                <div><div class="stat-label">Ошибок</div><div class="stat-value" id="total-errors" style="color: var(--danger);">0</div></div>
+                                <div><div class="stat-label">Скорость</div><div class="stat-value" id="scan-speed">0/мин</div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <h4 style="margin-bottom: 15px;">Лог сканирования</h4>
+                        <div style="height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--light);">
+                            <table style="font-size: 12px; width: 100%;">
+                                <thead><tr><th>Время</th><th>Бюллетень</th><th>Статус</th><th>Детали</th></tr></thead>
+                                <tbody id="scanner-log"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" id="error-details-panel" style="display: none;">
+                    <div class="panel-header">
+                        <h3>Детали ошибки сканирования</h3>
+                        <button class="btn btn-sm" onclick="hideErrorDetails()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="error-details-content"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 20px; border-left: 4px solid var(--primary);">
+                <div class="panel-header">
+                    <h3>Журнал инцидентов и модуль ИИ (Этап 2)</h3>
+                    <button class="btn btn-primary" onclick="openModal('yolo-modal')">
+                        <i class="fas fa-brain"></i> Визуализация работы YOLO
+                    </button>
+                </div>
+                <div id="incident-log-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <div style="padding: 20px; background: var(--light); border-radius: 8px; text-align: center; color: var(--text-light); grid-column: 1 / -1;">
+                        <i class="fas fa-check-double fa-2x" style="margin-bottom: 10px;"></i>
+                        <p>Нет инцидентов, требующих ручной модерации.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="calendar" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Календарь избирательных кампаний</h3>
+                    <div class="actions">
+                        <button class="btn btn-primary btn-sm" onclick="openElectionFormModal()"><i class="fas fa-plus"></i> Добавить выборы</button>
+                        <button class="btn btn-outline btn-sm" onclick="renderCalendar()"><i class="fas fa-sync-alt"></i> Обновить</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 20px;">
+                    <div style="flex: 1;">
+                        <div class="panel">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <button class="btn btn-sm" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                                <h4 id="current-month" style="margin: 0;">Загрузка...</h4>
+                                <button class="btn btn-sm" id="next-month"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div class="calendar-grid" id="calendar-grid"></div>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="panel"><h4>Предстоящие выборы</h4><div id="upcoming-elections" style="margin-top: 15px;">
+                            <div class="candidate-card" style="border-left-color: var(--primary);">
+                                <div class="candidate-avatar">Р</div>
+                                <div class="candidate-info">
+                                    <div style="font-weight: 600; font-size: 14px;">Выборы Главы Администрации 2026</div>
+                                    <div style="font-size: 12px; color: var(--text-light);">Запланированы на сентябрь 2026</div>
+                                </div>
+                            </div>
+                        </div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="votes" class="tab-content">
+            <div class="panel">
+                <div class="panel-header"><h3>Ввод протокола УИК</h3></div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Избирательный участок</label>
+                        <select id="vote-district" class="form-control" onchange="updateMaxVotes()"><option value="">Выберите участок...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Кандидат</label>
+                        <select id="vote-candidate" class="form-control"><option value="">Выберите кандидата...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Количество голосов</label>
+                        <input type="number" id="vote-count" class="form-control" placeholder="0" min="1">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary" onclick="addVote()" style="width: 100%; justify-content: center;"><i class="fas fa-save"></i> Сохранить протокол</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Журнал поступлений</h3>
+                    <button class="btn btn-outline btn-sm" onclick="renderVotesLog()">Обновить</button>
+                </div>
+                <table>
+                    <thead><tr><th>Время</th><th>Участок</th><th>Кандидат</th><th>Голосов</th></tr></thead>
+                    <tbody id="votes-log-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="candidates" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Реестр кандидатов</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openCandidateFormModal()"><i class="fas fa-plus"></i> Добавить</button>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>ФИО</th><th>Партия</th><th>Голосов</th><th>%</th></tr></thead>
+                    <tbody id="candidates-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="districts" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Список избирательных участков</h3>
+                    <div class="actions">
+                        <button class="btn btn-primary btn-sm" onclick="openDistrictFormModal()"><i class="fas fa-plus"></i> Создать УИК</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>Номер</th><th>Название/Адрес</th><th>Председатель</th><th>Учет бланков</th><th>В урне (проголосовало)</th><th>Статус</th></tr></thead>
+                    <tbody id="districts-body"></tbody>
+                </table>
+            </div>
+            
+            <div class="panel" style="margin-top: 20px;">
+                <div class="panel-header">
+                    <h3>Реестр избирателей</h3>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="voter-search" class="form-control" placeholder="Поиск (ФИО, Паспорт)..." oninput="renderVotersTable()" style="width: 250px;">
+                        <select id="voter-district-filter" class="form-control" style="width: 200px;" onchange="renderVotersTable()"><option value="">Все участки</option></select>
+                        <button class="btn btn-outline btn-sm" onclick="openVoterFormModal()"><i class="fas fa-user-plus"></i> Добавить</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>Паспорт</th><th>ФИО</th><th>Участок</th><th>Статус бланка</th><th>Действия оператора</th></tr></thead>
+                    <tbody id="voters-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="analytics" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Статистический анализ результатов</h3>
+                    <div class="actions">
+                        <select id="analytics-election" class="form-control" style="width: 200px;"><option value="current">Текущие выборы</option></select>
+                    </div>
+                </div>
+                
+                <div class="cards-grid">
+                    <div class="stat-card" style="--accent: var(--primary);">
+                        <div class="stat-label">Общая явка</div>
+                        <div class="stat-value" id="analytics-turnout">0%</div>
+                    </div>
+                    <div class="stat-card" style="--accent: var(--secondary);">
+                        <div class="stat-label">Средняя явка по участкам</div>
+                        <div class="stat-value" id="avg-turnout">0%</div>
+                    </div>
+                    <div class="stat-card" style="--accent: var(--warning);">
+                        <div class="stat-label">Аномалии распределения</div>
+                        <div class="stat-value" id="anomalies-count">0</div>
+                        <div style="font-size: 12px; color: var(--text-light);" id="anomalies-info"></div>
+                    </div>
+                </div>
+                
+                <div class="form-grid" style="margin-top: 20px;">
+                    <div class="panel">
+                        <h4>Анализ распределения голосов (тест Бенфорда)</h4>
+                        <!-- ИСПРАВЛЕНИЕ: Добавлен жесткий контейнер, чтобы график не улетал -->
+                        <div style="position: relative; height: 250px; width: 100%; margin-top: 15px;">
+                            <canvas id="benford-chart"></canvas>
+                        </div>
+                        <div id="benford-result" style="margin-top: 15px; font-size: 13px;"></div>
+                    </div>
+                    <div class="panel">
+                        <h4>Выявление аномальных участков</h4>
+                        <div style="height: 250px; overflow-y: auto;">
+                            <table style="font-size: 12px;">
+                                <thead><tr><th>УИК</th><th>Отклонение (Z)</th><th>Вероятность ошибки</th></tr></thead>
+                                <tbody id="anomalous-districts"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="reports" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Отчетность и аналитика</h3>
+                    <div class="actions">
+                        <button class="btn btn-success" onclick="generateFullReport()"><i class="fas fa-file-pdf"></i> Полный отчет</button>
+                        <button class="btn btn-primary" onclick="printReport()"><i class="fas fa-print"></i> Печать</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" onclick="generateReport('turnout-hourly')"><i class="fas fa-clock"></i> Явка по часам</button>
+                    <button class="btn btn-outline" onclick="generateReport('anomaly-detection')"><i class="fas fa-search"></i> Анализ аномалий</button>
+                </div>
+                
+                <div id="report-container">
+                    <div id="turnout-report" class="report-section" style="display: none;">
+                        <h4>Отчет по явке <span id="report-date"></span></h4>
+                        <div class="form-grid">
+                            <div><canvas id="hourly-turnout-chart" height="150"></canvas></div>
+                            <div>
+                                <table>
+                                    <thead><tr><th>Временной интервал</th><th>Проголосовало</th><th>% от общего</th></tr></thead>
+                                    <tbody id="hourly-turnout-data"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="anomaly-report" class="report-section" style="display: none;">
+                        <h4>Отчет об аномалиях распределения</h4><div id="anomaly-detection-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <div class="form-grid">
+                <div class="panel">
+                    <div class="panel-header"><h3>Настройки и Резервное копирование</h3></div>
+                    <!-- ИСПРАВЛЕНИЕ: Убрали название выборов, оставили только тему -->
+                    <div class="form-group">
+                        <label>Цветовая схема системы</label>
+                        <select class="form-control"><option>Стандартная</option><option>Ч/Б (высокий контраст)</option></select>
+                    </div>
+                    
+                    <hr style="margin: 25px 0; border: none; border-top: 1px solid var(--border);">
+                    
+                    <h4>Сохранение базы данных</h4>
+                    <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px; line-height: 1.5;">
+                        Выгрузите полную копию текущих выборов (списки избирателей, реестр участков, голоса и инциденты сканирования) в зашифрованном JSON-файле на ваш компьютер.
+                    </p>
+                    <button class="btn btn-success" onclick="exportDataToFile()" style="width: 100%; justify-content: center;">
+                        <i class="fas fa-download"></i> Скачать архив выборов
+                    </button>
+                </div>
+                <div class="panel">
+                    <div class="panel-header"><h3 style="color: var(--danger)">Опасная зона</h3></div>
+                    <p style="margin-bottom: 15px; font-size: 14px;">Действия в этой зоне необратимы.</p>
+                    <button class="btn btn-danger" onclick="factoryReset()" style="width: 100%; justify-content: center;"><i class="fas fa-trash-alt"></i> Полный сброс базы данных</button>
+                    <button class="btn btn-warning" style="background: var(--warning); color: white; margin-top: 10px; width: 100%; justify-content: center;" onclick="generateTestData()"><i class="fas fa-vial"></i> Сгенерировать тестовые данные</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="error-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3 id="error-modal-title">Ошибка сканирования</h3><button class="modal-close" onclick="closeModal('error-modal')">&times;</button></div>
+            <div id="error-modal-content"></div>
+        </div>
+    </div>
+
+    <div id="manual-entry-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Ручной ввод бюллетеня</h3><button class="modal-close" onclick="closeModal('manual-entry-modal')">&times;</button></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Номер бюллетеня</label><input type="text" id="manual-ballot-id" class="form-control" placeholder="B001"></div>
+                <div class="form-group"><label>Участок</label><select id="manual-district" class="form-control"></select></div>
+                <div class="form-group"><label>Кандидат</label><select id="manual-candidate" class="form-control"></select></div>
+                <div class="form-group"><label>Статус обработки</label><select id="manual-status" class="form-control"><option value="success">Успешно</option><option value="error">Ошибка</option><option value="manual_review">Ручная проверка</option></select></div>
+            </div>
+            <button class="btn btn-primary" onclick="submitManualEntry()" style="width: 100%; margin-top: 20px;"><i class="fas fa-save"></i> Сохранить</button>
+        </div>
+    </div>
+
+    <div id="election-form-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Добавить выборы</h3><button class="modal-close" onclick="closeModal('election-form-modal')">&times;</button></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Название выборов</label><input type="text" id="election-name" class="form-control" placeholder="Выборы"></div>
+                <div class="form-group"><label>Тип выборов</label><select id="election-type" class="form-control"><option value="federal">Федеральные</option><option value="regional">Региональные</option><option value="municipal">Муниципальные</option></select></div>
+                <div class="form-group"><label>Дата начала</label><input type="datetime-local" id="election-start" class="form-control"></div>
+                <div class="form-group"><label>Дата окончания</label><input type="datetime-local" id="election-end" class="form-control"></div>
+            </div>
+            <button class="btn btn-primary" onclick="saveElection()" style="width: 100%; margin-top: 20px;"><i class="fas fa-save"></i> Сохранить</button>
+        </div>
+    </div>
+
+    <div id="quick-add-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Быстрое добавление данных</h3><button class="modal-close" onclick="closeModal('quick-add-modal')">&times;</button></div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <button class="btn btn-primary" onclick="generateTestData()"><i class="fas fa-vial"></i> Сгенерировать тестовые данные</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="yolo-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>Отладка нейросети (YOLOv8 + OpenCV)</h3>
+                <button class="modal-close" onclick="closeModal('yolo-modal')">&times;</button>
+            </div>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px; background: #e2e8f0; border-radius: 8px; padding: 20px; display: flex; justify-content: center; align-items: center; position: relative;">
+                    <div style="width: 280px; height: 380px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 15px; position: relative;">
+                        <div style="text-align: center; font-weight: bold; border-bottom: 2px solid black; margin-bottom: 20px; padding-bottom: 5px;">БЮЛЛЕТЕНЬ</div>
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 3px solid #10b981; pointer-events: none; z-index: 10;">
+                            <span style="background: #10b981; color: white; font-size: 10px; font-weight: bold; padding: 2px 5px; position: absolute; top: -20px; left: -3px;">class: ballot 0.99</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div>1. Иванов И.И.</div>
+                            <div style="width: 24px; height: 24px; border: 1px solid black; position: relative;">
+                                <div style="position: absolute; top: -4px; left: -4px; width: 30px; height: 30px; border: 2px solid #ef4444; z-index: 10;">
+                                    <span style="background: #ef4444; color: white; font-size: 9px; position: absolute; top: -14px; left: -2px; white-space: nowrap;">empty_box 0.96</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <div>2. Петров П.П.</div>
+                            <div style="width: 24px; height: 24px; border: 1px solid black; position: relative;">
+                                <div style="position: absolute; top: -8px; left: 2px; color: #1e3a8a; font-size: 28px; font-family: cursive;">V</div>
+                                <div style="position: absolute; top: -4px; left: -4px; width: 30px; height: 30px; border: 2px solid #f59e0b; z-index: 10;">
+                                    <span style="background: #f59e0b; color: white; font-size: 9px; position: absolute; top: -14px; left: -2px; white-space: nowrap;">marked_box 0.92</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 300px; background: #0f172a; border-radius: 8px; padding: 15px; color: #10b981; font-family: monospace; font-size: 13px; overflow-y: auto;">
+                    <div style="color: #94a3b8; margin-bottom: 10px; border-bottom: 1px solid #334155; padding-bottom: 5px;">// JSON ответ от Python микросервиса</div>
+{
+  "timestamp": "2026-05-18T14:32:01Z",
+  "document": {
+    "detected": true,
+    "confidence": 0.99,
+    "angle_correction": 0.5
+  },
+  "objects": [
+    {
+      "class_id": 1,
+      "class_name": "empty_box",
+      "confidence": 0.96,
+      "bbox": [150, 200, 174, 224]
+    },
+    {
+      "class_id": 2,
+      "class_name": "marked_box",
+      "confidence": 0.92,
+      "bbox": [150, 250, 174, 274]
+    }
+  ],
+  "analysis": {
+    "total_boxes": 2,
+    "marks_count": 1,
+    "verdict": "VALID"
+  }
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+<script>
+    // Загрузка данных при старте
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем подключение к API
+        fetch('http://127.0.0.1:8000/stats')
+            .then(response => {
+                if (!response.ok) throw new Error('API недоступен');
+                return response.json();
+            })
+            .then(data => {
+                console.log('API работает, данные загружены');
+            })
+            .catch(error => {
+                console.warn('API не доступен, используем локальные данные');
+            });
+    });
+</script>
+</body>
+</html>
