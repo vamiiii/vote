@@ -505,22 +505,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
-<script>
-    // Загрузка данных при старте
-    document.addEventListener('DOMContentLoaded', function() {
-        // Проверяем подключение к API
-        fetch('http://127.0.0.1:8000/stats')
-            .then(response => {
-                if (!response.ok) throw new Error('API недоступен');
-                return response.json();
-            })
-            .then(data => {
-                console.log('API работает, данные загружены');
-            })
-            .catch(error => {
-                console.warn('API не доступен, используем локальные данные');
-            });
-    });
-</script>
 </body>
 </html>
