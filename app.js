@@ -1,5 +1,5 @@
 // ======================= API КЛИЕНТ =======================
-const API_BASE_URL = 'https://af0af0ce7f6a28.lhr.life';
+const API_BASE_URL = 'https://6bfe8a4023aa01.lhr.life';
 
 const api = {
     async get(endpoint) {
